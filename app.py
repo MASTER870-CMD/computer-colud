@@ -234,5 +234,6 @@ def serve_frontend(path):
 #             FINAL RENDER PRODUCTION SERVER
 # ==========================================================
 if __name__ == "__main__":
-    PORT = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=PORT, debug=False)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+
