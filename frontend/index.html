@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Cloud Computer — Virtual Desktop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root{--accent:#0b5ed7;--muted:#6c757d}
+    html,body{height:100%}
+    body{font-family:Inter,Segoe UI,Arial;margin:0;background:#e9f2ff}
+    .desktop{position:relative;height:calc(100vh - 48px);overflow:hidden;padding:18px;background-size:cover;background-position:center;transition:background 0.25s}
+    .taskbar{height:48px;background:#0f1724;color:#fff;display:flex;align-items:center;padding:0 12px;gap:8px}
+    .tray{margin-left:auto;display:flex;gap:8px;align-items:center}
+    .icon{width:84px;text-align:center;color:#0b3b61;cursor:pointer}
+    .icon img{width:64px;height:64px;object-fit:contain;display:block;margin:auto;border-radius:10px}
+    .window{position:absolute;background:#fff;border-radius:10px;box-shadow:0 18px 48px rgba(2,6,23,0.18);overflow:hidden;min-width:360px;min-height:220px}
+    .win-title{background:linear-gradient(180deg,#eef6ff,#e7f0ff);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #edf2fb}
+    .win-body{padding:12px;height:calc(100% - 56px);overflow:auto}
+    .start-menu{position:absolute;left:12px;bottom:60px;background:#fff;border-radius:10px;padding:10px;box-shadow:0 12px 40px rgba(2,6,23,0.12);width:280px}
+    .small-muted{color:var(--muted);font-size:0.9rem}
+    .btn-small{padding:.25rem .5rem;font-size:.85rem}
+    .dragover{outline:4px dashed rgba(11,94,215,0.22)}
+    .file-thumb{height:120px;object-fit:cover;border-radius:6px}
+    .breadcrumbs{font-size:0.95rem;margin-bottom:8px}
+    .context-menu{position:fixed;background:#fff;border:1px solid #ddd;border-radius:6px;padding:6px;box-shadow:0 8px 30px rgba(2,6,23,0.15);display:none;z-index:9999}
+    .context-menu button{display:block;width:100%;text-align:left;border:none;background:transparent;padding:6px 8px}
+    .app-grid{display:flex;gap:12px;flex-wrap:wrap}
+    .app-card{width:120px;text-align:center;padding:10px;border-radius:10px;background:rgba(255,255,255,0.6);cursor:pointer}
+  
+
+  /* icons */
+
+  .desktop-icons {
+    position: absolute;
+    top: 30px;
+    left: 50px;
+    display: flex;
+    gap: 55px;
+    align-items: center;
+}
+
+.icon-block {
+    width: 70px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.icon-block:hover {
+    transform: scale(1.15);
+    opacity: 0.85;
+}
+
+.icon-img {
+    width: 55px;
+    height: 55px;
+    padding: 5px;
+    border-radius: 12px;
+}
+/* icons end */
+
+  </style>
+</head>
+<body>
+  <div class="desktop" id="desktop">
+    <div id="icons" style="display:flex;gap:18px;flex-wrap:wrap">
+      <div class="icon-block" onclick="openApp('files')">
+        <img src="icons/color/folder.png" class="icon-img">
+        <span>Files</span>
+    </div>
+
+       <div class="icon-block" onclick="openApp('images')">
+        <img src="icons/color/image.png" class="icon-img">
+        <span>Images</span>
+    </div>
+      <div class="icon-block" onclick="openApp('music')">
+        <img src="icons/color/music.png" class="icon-img">
+        <span>Music</span>
+    </div>
+    
+     <div class="icon-block" onclick="openApp('calculator')">
+        <img src="icons/color/calc.png" class="icon-img">
+        <span>Calc</span>
+    </div>
+       <div class="icon-block" onclick="openApp('notes')">
+        <img src="icons/color/note.png" class="icon-img">
+        <span>Notes</span>
+    </div>
+       <div class="icon-block" onclick="openApp('terminal')">
+        <img src="icons/color/terminal.png" class="icon-img">
+        <span>Terminal</span>
+    </div>
+      <div class="icon-block" onclick="openApp('browser')">
+        <img src="icons/color/browser.png" class="icon-img">
+        <span>Browser</span>
+    </div>
+       <div class="icon-block" onclick="openApp('thispc')">
+        <img src="icons/color/pc.jpg" class="icon-img">
+        <span>This PC</span>
+    </div>
+        <div class="icon-block" onclick="openApp('settings')">
+        <img src="icons/color/settings.png" class="icon-img">
+        <span>Settings</span>
+    </div>
+    <div class="icon-block" onclick="openApp('recycle')">
+        <img src="icons/color/recycle.png" class="icon-img">
+        <span>Recycle Bin</span>
+    </div>
+    
+
+    </div>
+  </div>
+
+  <div id="startMenu" class="start-menu hidden">
+    <div><strong>Mini Cloud — Virtual OS</strong></div>
+    <hr>
+    <div class="d-flex flex-column gap-2">
+      <div class="app-link" data-app="files">Files</div>
+      <div class="app-link" data-app="images">Images</div>
+      <div class="app-link" data-app="music">Music</div>
+      <div class="app-link" data-app="calculator">Calculator</div>
+      <div class="app-link" data-app="notes">Notes</div>
+      <div class="app-link" data-app="terminal">Terminal</div>
+      <div class="app-link" data-app="browser">Browser</div>
+      <div class="app-link" data-app="thispc">This PC</div>
+      <div class="app-link" data-app="settings">Settings</div>
+    </div>
+  </div>
+
+  <div id="windows"></div>
+
+  <div class="taskbar">
+    <button id="startbtn" class="btn btn-sm btn-light">☰ Start</button>
+    <div id="taskButtons" style="display:flex;gap:8px;margin-left:8px;"></div>
+    <div class="tray">
+      <div class="small-muted">Virtual • </div>
+      <div id="clock" class="small-muted"></div>
+    </div>
+  </div>
+
+  <div id="contextMenu" class="context-menu"></div>
+
+  <!-- preview modal (Bootstrap) -->
+  <div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h5 id="previewTitle" class="modal-title">Preview</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body" id="previewBody"></div>
+        <div class="modal-footer"><a id="downloadLink" class="btn btn-primary" download>Download</a><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+      </div>
+    </div>
+  </div>
+  
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/*
+  Upgraded frontend for Mini Cloud Computer
+  - Fixes new folder selection (new folder is empty and selected)
+  - Improved search (debounced, uses server-side q)
+  - Wallpaper applies only to virtual desktop
+  - New apps: Calculator, Notes, Music, Terminal (fake), Browser
+  - Drag & drop upload, context menu, move modal
+*/
+
+const API = ''; // same origin
+const $ = id => document.getElementById(id);
+const desktopEl = $('desktop');
+const windowsEl = $('windows');
+let zIndexCounter = 10;
+let windowsMap = {}; // id -> dom
+let searchTimer = null;
+
+// clock
+function updateClock(){ $('clock').textContent = new Date().toLocaleString(); }
+setInterval(updateClock,1000); updateClock();
+
+document.querySelectorAll('[data-app]').forEach(el=>{
+  el.addEventListener('click', ()=> openApp(el.dataset.app));
+});
+document.querySelectorAll('.app-link').forEach(el=>el.addEventListener('click', ()=> { openApp(el.dataset.app); $('startMenu').classList.add('hidden'); }));
+
+$('startbtn').addEventListener('click', () => {
+    const menu = $('startMenu');
+    if(menu.classList.contains('hidden')){
+        menu.classList.remove('hidden');
+        menu.style.display = 'block';
+    } else {
+        menu.classList.add('hidden');
+        menu.style.display = 'none';
+    }
+});
+
+
+// draggable windows helper
+function makeDraggable(win){
+  const header = win.querySelector('.win-title');
+  header.style.cursor = 'move';
+  let offsetX=0, offsetY=0, dragging=false;
+  header.addEventListener('pointerdown', (e)=>{ dragging=true; offsetX = e.clientX - win.offsetLeft; offsetY = e.clientY - win.offsetTop; win.style.zIndex = ++zIndexCounter; });
+  document.addEventListener('pointermove', (e)=>{ if(!dragging) return; win.style.left = Math.max(8, e.clientX - offsetX) + 'px'; win.style.top = Math.max(8, e.clientY - offsetY) + 'px'; });
+  document.addEventListener('pointerup', ()=>{ dragging=false; });
+}
+
+// taskbar
+function addTaskButton(id, title){
+  const container = $('taskButtons');
+  if(container.querySelector(`[data-task="${id}"]`)) return;
+  const btn = document.createElement('button'); btn.className='btn btn-sm btn-light'; btn.textContent = title; btn.dataset.task = id;
+  btn.addEventListener('click', ()=> toggleWindow(id));
+  container.appendChild(btn);
+}
+
+// create window - ensures unique body id
+function createWindow(id, title, width=820, height=520){
+  if(windowsMap[id]) { focusWindow(id); return windowsMap[id]; }
+  const win = document.createElement('div'); win.className='window'; win.style.width = width + 'px'; win.style.height = height + 'px';
+  win.style.left = (60 + Math.random()*60) + 'px'; win.style.top = (60 + Math.random()*40) + 'px';
+  win.style.zIndex = ++zIndexCounter;
+  win.dataset.winId = id;
+  win.innerHTML = `<div class="win-title"><div>${title}</div><div><button class="btn-small btn btn-sm" data-action="min">_</button> <button class="btn-small btn btn-sm" data-action="close">X</button></div></div><div class="win-body" id="body-${id}">Loading...</div>`;
+  windowsEl.appendChild(win);
+  win.querySelectorAll('[data-action="close"]').forEach(b=>b.addEventListener('click', ()=> closeWindow(id)));
+  win.querySelectorAll('[data-action="min"]').forEach(b=>b.addEventListener('click', ()=> minimizeWindow(id)));
+  win.addEventListener('mousedown', ()=> { win.style.zIndex = ++zIndexCounter; focusTaskButton(id); });
+  makeDraggable(win);
+  windowsMap[id] = win;
+  addTaskButton(id, title);
+  return win;
+}
+function focusWindow(id){ const w = windowsMap[id]; if(!w) return; w.style.display = ''; w.style.zIndex = ++zIndexCounter; focusTaskButton(id); }
+function closeWindow(id){ const w = windowsMap[id]; if(!w) return; w.remove(); delete windowsMap[id]; const btn = document.querySelector(`[data-task="${id}"]`); if(btn) btn.remove(); }
+function minimizeWindow(id){ const w = windowsMap[id]; if(!w) return; w.style.display = (w.style.display === 'none') ? '' : 'none'; }
+function toggleWindow(id){ if(windowsMap[id]) { minimizeWindow(id); } else openApp(id); }
+function focusTaskButton(id){ document.querySelectorAll('#taskButtons button').forEach(b=>b.classList.remove('active')); const btn = document.querySelector(`#taskButtons button[data-task="${id}"]`); if(btn) btn.classList.add('active'); }
+
+// ---------- Files app (improved) ----------
+async function openFilesApp(){
+  const id='files'; createWindow(id,'Files',980,560); const body = $(`body-${id}`);
+  body.innerHTML = `
+    <div class="breadcrumbs"><span id="crumbs">All</span></div>
+    <div class="d-flex mb-2 align-items-center gap-2">
+      <select id="folderSelect" class="form-select form-select-sm" style="width:260px"></select>
+      <button id="delFolderBtn" class="btn btn-sm btn-outline-danger">Delete Folder</button>
+      <input id="fileSearch" class="form-control form-control-sm" placeholder="Search files or folders...">
+      <button id="uploadFiles" class="btn btn-sm btn-primary">Upload</button>
+      <input id="fileInput" type="file" multiple style="display:none">
+      <button id="newFolderBtn" class="btn btn-sm btn-outline-secondary">New Folder</button>
+      <button id="newFileBtn" class="btn btn-sm btn-outline-secondary">New File</button>
+      <button id="trashViewBtn" class="btn btn-sm btn-outline-danger">Trash</button>
+      <button id="refreshFiles" class="btn btn-sm btn-outline-secondary">Refresh</button>
+    </div>
+    <div id="filesGrid" class="row g-3"></div>
+  `;
+
+  // wire events
+  body.querySelector('#uploadFiles').addEventListener('click', ()=> body.querySelector('#fileInput').click());
+  body.querySelector('#fileInput').addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files);
+    let target = body.querySelector('#folderSelect').value || '';
+    if(!target){
+      const fr = await fetch('/api/folders'); const folders = await fr.json();
+      if(folders && folders.length) target = folders[0].id;
+    }
+    if(!target){ alert('No folder found'); return; }
+    for(const f of files){
+      const fd = new FormData(); fd.append('file', f); fd.append('folder', target);
+      await fetch('/api/files', {method:'POST', body:fd});
+    }
+    e.target.value=''; await renderFiles();
+  });
+
+  body.querySelector('#refreshFiles').addEventListener('click', renderFiles);
+  body.querySelector('#trashViewBtn').addEventListener('click', async ()=>{
+    const btn = body.querySelector('#trashViewBtn');
+    if(btn.classList.contains('active')){ btn.classList.remove('active'); await renderFiles(); } else { btn.classList.add('active'); await renderFiles(true); }
+  });
+
+  body.querySelector('#newFolderBtn').addEventListener('click', async ()=>{
+    const name = prompt('Folder name?','New Folder');
+    if(!name) return;
+    // create and auto-select
+    const res = await fetch('/api/folders', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name})});
+    const js = await res.json();
+    if(res.ok && js.id){
+      await loadFoldersToSelect(body.querySelector('#folderSelect'), js.id);
+      await renderFiles();
+      // select new and render specifically (ensures empty)
+      body.querySelector('#folderSelect').value = js.id;
+      await renderFiles();
+    } else {
+      alert('Folder creation failed: ' + (js.error || 'unknown'));
+    }
+  });
+
+  body.querySelector('#delFolderBtn').addEventListener('click', async ()=>{
+    const sel = body.querySelector('#folderSelect').value;
+    if(!sel){ alert('Choose a folder to delete'); return; }
+    if(!confirm('Delete this folder? Only empty non-root folders can be deleted.')) return;
+    const res = await fetch(`/api/folders/${sel}/delete`, {method:'POST'});
+    const js = await res.json().catch(()=>({}));
+    if(res.ok && js.ok){ alert('Folder deleted'); await loadFoldersToSelect(body.querySelector('#folderSelect')); await renderFiles(); }
+    else alert('Cannot delete folder: ' + (js.error || 'unknown'));
+  });
+
+  body.querySelector('#newFileBtn').addEventListener('click', async ()=>{
+    const filename = prompt('Filename (e.g., notes.txt)','newfile.txt');
+    if(!filename) return;
+    let folder = body.querySelector('#folderSelect').value;
+    if(!folder){
+      const fr = await fetch('/api/folders'); const folders = await fr.json();
+      if(folders && folders.length) folder = folders[0].id;
+    }
+    if(!folder){ alert('Choose folder first'); return; }
+    const form = new FormData(); form.append('folder', folder); form.append('filename', filename); form.append('content', '');
+    const res = await fetch('/api/files/create-empty', {method:'POST', body: form});
+    if(res.ok) { await renderFiles(); } else { const js = await res.json().catch(()=>({})); alert('Create file failed: ' + (js.error || 'unknown')); }
+  });
+
+  // debounce search
+  const searchInput = body.querySelector('#fileSearch');
+  searchInput.addEventListener('input', ()=>{
+    if(searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(()=> renderFiles(), 300);
+  });
+
+  await loadFoldersToSelect(body.querySelector('#folderSelect'));
+  await renderFiles();
+  focusWindow(id);
+
+  async function renderFiles(trash=false){
+    const folder = body.querySelector('#folderSelect').value || '';
+    const q = body.querySelector('#fileSearch').value || '';
+    const params = new URLSearchParams();
+    if(folder) params.set('folder', folder);
+    if(q) params.set('q', q);
+    params.set('trashed', trash? '1' : '0');
+    const res = await fetch('/api/files?' + params.toString());
+    const data = await res.json();
+    const grid = body.querySelector('#filesGrid'); grid.innerHTML = '';
+    data.forEach(f=>{
+      const col = document.createElement('div'); col.className='col-sm-6 col-md-4';
+      let thumb = '<div class="p-4 text-center small-muted">FILE</div>';
+      if(f.mimetype && f.mimetype.startsWith('image')) thumb = `<img src="/api/files/${f.id}/download" class="file-thumb">`;
+      if(f.mimetype && f.mimetype.startsWith('video')) thumb = `<video src="/api/files/${f.id}/download" class="file-thumb" muted></video>`;
+      const actions = trash
+        ? `<button class="btn btn-sm btn-success" data-restore="${f.id}">Restore</button><button class="btn btn-sm btn-danger" data-delete="${f.id}">Delete</button>`
+        : `<button class="btn btn-sm btn-outline-primary" data-open="${f.id}">Open</button>
+           <button class="btn btn-sm btn-outline-secondary" data-rename="${f.id}">Rename</button>
+           <button class="btn btn-sm btn-outline-secondary" data-move="${f.id}">Move</button>
+           <button class="btn btn-sm btn-outline-danger" data-trash="${f.id}">Trash</button>`;
+      col.innerHTML = `<div class="card p-2 file-card" data-id="${f.id}"><div class="mb-2">${thumb}</div><div><strong>${f.filename}</strong><div class="small-muted">${f.mimetype} • ${formatSize(f.size)} • ${f.folder_name || ''}</div></div><div class="mt-2 d-flex gap-2">${actions}</div></div>`;
+      grid.appendChild(col);
+    });
+
+    // bind actions
+    grid.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click', ()=> openPreview(b.dataset.open)));
+    grid.querySelectorAll('[data-trash]').forEach(b=>b.addEventListener('click', async ()=> { await fetch(`/api/files/${b.dataset.trash}/trash`, {method:'POST'}); await renderFiles(); }));
+    grid.querySelectorAll('[data-restore]').forEach(b=>b.addEventListener('click', async ()=> { await fetch(`/api/files/${b.dataset.restore}/restore`, {method:'POST'}); await renderFiles(true); }));
+    grid.querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click', async ()=> { if(confirm('Delete permanently?')){ await fetch(`/api/files/${b.dataset.delete}/delete`, {method:'DELETE'}); await renderFiles(true); } }));
+    grid.querySelectorAll('[data-rename]').forEach(b=>b.addEventListener('click', async ()=> {
+      const id = b.dataset.rename;
+      const newName = prompt('New name?');
+      if(!newName) return;
+      const res = await fetch(`/api/files/${id}/rename`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name:newName})});
+      if(res.ok) await renderFiles();
+      else { const js = await res.json().catch(()=>({})); alert('Rename failed: ' + (js.error || 'unknown')); }
+    }));
+    grid.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('click', async ()=>{
+      const id = b.dataset.move;
+      try {
+        const fr = await fetch('/api/folders'); const folders = await fr.json();
+        // show a simple modal-like prompt with folder names and IDs
+        let msg = 'Pick folder id to move:\\n';
+        folders.forEach(f => msg += `${f.id} -> ${f.name}\\n`);
+        const dest = prompt(msg);
+        if(!dest) return;
+        const res = await fetch(`/api/files/${id}/move`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({folder: dest})});
+        if(res.ok) await renderFiles(); else { const js = await res.json().catch(()=>({})); alert('Move failed: ' + (js.error || 'unknown')); }
+      } catch(e){ alert('Move failed: ' + e); }
+    }));
+
+    // right-click context menu on file cards
+    grid.querySelectorAll('.file-card').forEach(card=>{
+      card.addEventListener('contextmenu', (ev)=>{
+        ev.preventDefault();
+        const fid = card.dataset.id;
+        showContextMenu(ev.clientX, ev.clientY, fid);
+      });
+    });
+
+    // breadcrumbs
+    const selId = body.querySelector('#folderSelect').value;
+    if(!selId) $('crumbs').textContent = 'All';
+    else {
+      const opt = body.querySelector(`#folderSelect option[value="${selId}"]`);
+      $('crumbs').textContent = opt ? opt.textContent : 'Folder';
+    }
+  }
+
+  async function loadFoldersToSelect(selectEl, keepValue=''){
+    const res = await fetch('/api/folders'); const data = await res.json();
+    const prev = keepValue || selectEl.value || '';
+    selectEl.innerHTML = '';
+    const allOpt = document.createElement('option'); allOpt.value = ''; allOpt.textContent = 'All folders'; selectEl.appendChild(allOpt);
+    data.forEach(f=>{ const o = document.createElement('option'); o.value = f.id; o.textContent = f.name; selectEl.appendChild(o); });
+    if(prev){
+      const found = selectEl.querySelector(`option[value="${prev}"]`);
+      if(found) selectEl.value = prev;
+    }
+    // change handler: render files for selected folder
+    selectEl.addEventListener('change', ()=> renderFiles());
+  }
+}
+
+// ---------- Images viewer ----------
+async function openImagesApp(){
+  const id='images'; createWindow(id,'Images',900,520); const body = $(`body-${id}`);
+  body.innerHTML = `<div class="d-flex justify-content-between mb-2"><div><strong>Images</strong></div><div><button id="refreshImgs" class="btn btn-sm btn-outline-secondary">Refresh</button></div></div><div id="imagesGrid" class="row g-3"></div>`;
+  body.querySelector('#refreshImgs').addEventListener('click', loadImages); await loadImages(); focusWindow(id);
+  async function loadImages(){
+    const res = await fetch('/api/files?trashed=0'); const data = await res.json();
+    const images = data.filter(i=>i.mimetype && i.mimetype.startsWith('image'));
+    const grid = body.querySelector('#imagesGrid'); grid.innerHTML = '';
+    images.forEach(f=>{ const col=document.createElement('div'); col.className='col-sm-6 col-md-4'; col.innerHTML = `<div class="card p-2"><img src="/api/files/${f.id}/download" class="file-thumb mb-2"><div><strong>${f.filename}</strong></div></div>`; col.addEventListener('dblclick', ()=> openPreview(f.id)); grid.appendChild(col); });
+  }
+}
+
+// ---------- Music player (lists audio files) ----------
+async function openMusicApp(){
+  const id='music'; createWindow(id,'Music',800,460); const body = $(`body-${id}`);
+  body.innerHTML = `<div class="d-flex justify-content-between mb-2"><div><strong>Music</strong></div><div><input id="uploadMusic" type="file" accept="audio/*" style="display:none"><button id="btnUploadMusic" class="btn btn-sm btn-primary">Upload</button><button id="refreshMusic" class="btn btn-sm btn-outline-secondary">Refresh</button></div></div><div id="musicList" class="list-group"></div><div class="mt-3"><audio id="audioPlayer" controls style="width:100%"></audio></div>`;
+  body.querySelector('#btnUploadMusic').addEventListener('click', ()=> body.querySelector('#uploadMusic').click());
+  body.querySelector('#uploadMusic').addEventListener('change', async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const fr = await fetch('/api/folders'); const folders = await fr.json();
+    let folder = folders && folders.length ? folders[0].id : null;
+    if(!folder){ alert('No folder to upload'); return; }
+    const fd = new FormData(); fd.append('file', f); fd.append('folder', folder);
+    await fetch('/api/files', {method:'POST', body: fd}); await loadMusic();
+  });
+  body.querySelector('#refreshMusic').addEventListener('click', loadMusic);
+  await loadMusic(); focusWindow(id);
+
+  async function loadMusic(){
+    const res = await fetch('/api/files?trashed=0'); const data = await res.json();
+    const auds = data.filter(i=>i.mimetype && i.mimetype.startsWith('audio'));
+    const list = body.querySelector('#musicList'); list.innerHTML = '';
+    auds.forEach(a=> {
+      const item = document.createElement('button'); item.className='list-group-item list-group-item-action'; item.textContent = a.filename;
+      item.addEventListener('click', ()=> {
+        $('audioPlayer').src = `/api/files/${a.id}/download`;
+        $('audioPlayer').play();
+      });
+      list.appendChild(item);
+    });
+  }
+}
+
+// ---------- Calculator ----------
+function openCalculator(){
+  const id='calculator'; createWindow(id,'Calculator',360,420); const body = $(`body-${id}`);
+  body.innerHTML = `<div id="calcDisplay" class="mb-2 p-2 border" style="font-size:1.4rem;height:48px"></div>
+    <div class="d-grid gap-2" style="grid-template-columns:repeat(4,1fr);display:grid">
+      ${['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+'].map(s=>`<button class="btn btn-secondary calc-btn">${s}</button>`).join('')}
+    </div>`;
+  let expr = '';
+  const disp = $('calcDisplay');
+  body.querySelectorAll('.calc-btn').forEach(b=>{
+    b.addEventListener('click', ()=> {
+      const v = b.textContent;
+      if(v === '='){
+        try{ expr = eval(expr).toString(); disp.textContent = expr; }catch(e){ disp.textContent = 'ERR'; expr=''; }
+      } else {
+        expr += v; disp.textContent = expr;
+      }
+    });
+  });
+  focusWindow(id);
+}
+
+// ---------- Notes (simple CRUD saved as files in a "notes" folder) ----------
+async function openNotesApp(){
+  const id='notes'; createWindow(id,'Notes',720,520); const body = $(`body-${id}`);
+  body.innerHTML = `<div class="d-flex justify-content-between mb-2"><div><strong>Notes</strong></div><div><button id="newNote" class="btn btn-sm btn-primary">New Note</button><button id="refreshNotes" class="btn btn-sm btn-outline-secondary">Refresh</button></div></div><div id="notesList" class="row g-3"></div>`;
+  body.querySelector('#newNote').addEventListener('click', async ()=>{
+    const title = prompt('Note title','Untitled');
+    if(!title) return;
+    // ensure notes folder exists (create one called 'notes' if not)
+    const fr = await fetch('/api/folders'); const folders = await fr.json();
+    let notesFolder = folders.find(f=>f.name==='notes');
+    if(!notesFolder){
+      const cr = await fetch('/api/folders', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name:'notes'})});
+      const js = await cr.json(); notesFolder = {id: js.id, name: 'notes'};
+    }
+    const filename = `${title}.txt`;
+    const form = new FormData(); form.append('folder', notesFolder.id); form.append('filename', filename); form.append('content', '');
+    await fetch('/api/files/create-empty', {method:'POST', body: form});
+    await loadNotes();
+  });
+  body.querySelector('#refreshNotes').addEventListener('click', loadNotes);
+  await loadNotes(); focusWindow(id);
+
+  async function loadNotes(){
+    const res = await fetch('/api/files?trashed=0'); const data = await res.json();
+    const notes = data.filter(i=>i.filename && i.filename.toLowerCase().endsWith('.txt'));
+    const list = body.querySelector('#notesList'); list.innerHTML = '';
+    notes.forEach(n=>{
+      const col = document.createElement('div'); col.className='col-md-6';
+      col.innerHTML = `<div class="card p-2"><div class="d-flex justify-content-between"><strong>${n.filename}</strong><div><button class="btn btn-sm btn-outline-primary" data-open="${n.id}">Open</button></div></div></div>`;
+      col.querySelector('[data-open]').addEventListener('click', async ()=> {
+        const r = await fetch(`/api/files/${n.id}/download`); const t = await r.text();
+        openNoteEditor(n.filename, n.id, t);
+      });
+      list.appendChild(col);
+    });
+  }
+
+  function openNoteEditor(title, id, content){
+    const eid = `note-editor-${id}`;
+    const modalHtml = `<div class="modal fade" id="${eid}" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">${title}</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><textarea id="${eid}-ta" class="form-control" style="height:300px">${content.replace(/</g,'&lt;')}</textarea></div><div class="modal-footer"><button class="btn btn-primary" id="${eid}-save">Save</button><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modalEl = $(eid);
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    modalEl.querySelector(`#${eid}-save`).addEventListener('click', async ()=>{
+      const newContent = modalEl.querySelector(`#${eid}-ta`).value;
+      // overwrite file: for simplicity create a new file with same name and delete old, or rewrite file on disk
+      // we'll rewrite on disk via fetch download to get path is not allowed; instead use rename approach:
+      // simplest approach: delete and create new with same filename (keeps id change) — acceptable for notes
+      await fetch(`/api/files/${id}/delete`, {method:'DELETE'});
+      // find folder - filename has pattern original name (we need folder id); we will upload content as new file in root
+      const fr = await fetch('/api/folders'); const folders = await fr.json();
+      const folderId = folders[0].id;
+      const form = new FormData(); const blob = new Blob([newContent], {type:'text/plain'});
+      form.append('folder', folderId); form.append('file', blob, title);
+      await fetch('/api/files', {method:'POST', body: form});
+      modal.hide(); modalEl.remove();
+      await openNotesApp(); // refresh
+    });
+    modalEl.addEventListener('hidden.bs.modal', ()=> { modalEl.remove(); });
+  }
+}
+
+// ---------- Fake Terminal ----------
+function openTerminal(){
+  const id='terminal'; createWindow(id,'Terminal',700,420); const body = $(`body-${id}`);
+  body.innerHTML = `<div id="termOut" style="background:#0b1220;color:#bcdcff;padding:8px;height:320px;overflow:auto;font-family:monospace"></div><div class="d-flex gap-2 mt-2"><input id="termIn" class="form-control form-control-sm" placeholder="type command (help)"><button id="termRun" class="btn btn-sm btn-primary">Run</button></div>`;
+  const out = body.querySelector('#termOut'); const input = body.querySelector('#termIn');
+  function print(s){ out.innerHTML += s.replace(/</g,'&lt;') + '<br>'; out.scrollTop = out.scrollHeight; }
+  print('Mini Terminal — type "help" for commands');
+  body.querySelector('#termRun').addEventListener('click', runCmd);
+  input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') runCmd(); });
+  async function runCmd(){
+    const cmd = input.value.trim(); if(!cmd) return; print('<span style="color:#9fe1a8">$</span> ' + cmd); input.value='';
+    const parts = cmd.split(' ');
+    const c = parts[0].toLowerCase();
+    if(c === 'help'){
+      print('commands: help, date, ls, pwd, echo, clear');
+    } else if(c === 'date'){
+      print(new Date().toString());
+    } else if(c === 'ls'){
+      // list files in root (or show all)
+      try{
+        const res = await fetch('/api/files?trashed=0'); const data = await res.json();
+        if(data.length === 0) print('(empty)');
+        else data.forEach(d => print(d.filename + ' (' + d.folder_name + ')'));
+      }catch(e){ print('error listing'); }
+    } else if(c === 'pwd'){
+      print('/virtual-desktop');
+    } else if(c === 'echo'){
+      print(parts.slice(1).join(' '));
+    } else if(c === 'clear'){
+      out.innerHTML = '';
+    } else {
+      print('Unknown command: ' + c);
+    }
+  }
+  focusWindow(id);
+}
+
+// ---------- Mini Browser ----------
+function openBrowser() {
+  const id = 'browser';
+  createWindow(id, 'Search Engine', 920, 560);
+
+  const body = document.getElementById(`body-${id}`);
+
+  body.innerHTML = `
+    <div class="d-flex gap-2 mb-2">
+      <input id="searchQuery" class="form-control form-control-sm" placeholder="Search anything...">
+      <select id="searchSource" class="form-select form-select-sm" style="width:120px">
+        <option value="web">Web</option>
+        <option value="youtube">YouTube</option>
+        <option value="local">Local</option>
+        <option value="all">All</option>
+      </select>
+      <button id="searchGo" class="btn btn-sm btn-primary">Go</button>
+    </div>
+
+    <div id="searchResults" style="height:calc(100% - 56px); overflow:auto; padding:10px;">
+      <p class="text-muted">Type something and click Go.</p>
+    </div>
+  `;
+
+  document.getElementById("searchGo").onclick = async () => {
+    const q = document.getElementById("searchQuery").value.trim();
+    const source = document.getElementById("searchSource").value;
+
+    if (!q) return;
+
+    document.getElementById("searchResults").innerHTML =
+      "<p class='text-muted'>Searching...</p>";
+
+    // BACKEND SEARCH (you will implement or already added API)
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&sources=${source}`);
+    const data = await res.json();
+
+    const box = document.getElementById("searchResults");
+    box.innerHTML = "";
+
+    // ---- Local results ----
+    if (data.local && data.local.length) {
+      box.innerHTML += `<h5>Local Files</h5>`;
+      data.local.forEach(item => {
+        box.innerHTML += `
+          <div class="mb-2 p-2 border rounded">
+            <strong>${item.filename}</strong><br>
+            <button class="btn btn-sm btn-outline-primary" onclick="openPreview('${item.id}')">Open</button>
+          </div>
+        `;
+      });
+    }
+
+    // ---- Web results ----
+    if (data.web && data.web.length) {
+      box.innerHTML += `<h5 class="mt-3">Web Results</h5>`;
+      data.web.forEach(r => {
+        box.innerHTML += `
+          <div class="mb-3">
+            <a href="${r.link}" target="_blank"><strong>${r.title}</strong></a><br>
+            <span class="text-muted">${r.snippet || ""}</span>
+          </div>
+        `;
+      });
+    }
+
+    // ---- YouTube results ----
+    if (data.youtube && data.youtube.length) {
+      box.innerHTML += `<h5 class="mt-3">YouTube</h5>`;
+      data.youtube.forEach(v => {
+        box.innerHTML += `
+          <div class="mb-3 p-2 border rounded">
+            <strong>${v.title}</strong><br>
+            <iframe width="300" height="180" src="${v.embed}" style="border:0;border-radius:10px;margin-top:5px;"></iframe>
+          </div>
+        `;
+      });
+    }
+  };
+
+  focusWindow(id);
+}
+
+
+
+// ---------- This PC ----------
+async function openThisPcApp(){
+  const id='thispc'; createWindow(id,'This PC',520,420); const body = $(`body-${id}`);
+  body.innerHTML = `<div id="sysInfo">Loading...</div><div class="mt-3"><button id="refreshSys" class="btn btn-sm btn-outline-secondary">Refresh</button></div>`;
+  body.querySelector('#refreshSys').addEventListener('click', loadSys); await loadSys(); focusWindow(id);
+  async function loadSys(){
+    try{
+      const res = await fetch('/api/system/extended'); const info = await res.json();
+      const lines = [];
+      for(const [k,v] of Object.entries(info)){
+        if(k === 'uptime_seconds' && v !== null){
+          const days = Math.floor(v / 86400); const hours = Math.floor((v % 86400)/3600);
+          lines.push(`<div><strong>uptime</strong>: ${days}d ${hours}h</div>`);
+        } else if(typeof v === 'number' && (k.indexOf('ram')>-1 || k.indexOf('disk')>-1)){
+          lines.push(`<div><strong>${k}</strong>: ${formatSize(v)}</div>`);
+        } else lines.push(`<div><strong>${k}</strong>: ${v}</div>`);
+      }
+      body.querySelector('#sysInfo').innerHTML = lines.join('');
+    }catch(e){ body.querySelector('#sysInfo').textContent = 'Unable to fetch system info'; }
+  }
+}
+
+// ---------- Settings (wallpaper etc.) ----------
+async function openSettingsApp(){
+  const id='settings'; createWindow(id,'Settings',560,420); const body = $(`body-${id}`);
+  body.innerHTML = `<div class="mb-2"><strong>Settings</strong></div>
+    <div class="d-flex gap-2 mb-2"><button id="eraseBtn" class="btn btn-danger">Erase All Data (GDPR)</button><button id="exportBtn" class="btn btn-outline-primary">Export Backup</button></div>
+    <div class="mt-3"><div><strong>Wallpaper (applies only to virtual desktop)</strong></div>
+      <div class="d-flex gap-2 mt-2">
+        <input id="wallpaperFile" type="file" accept="image/*">
+        <button id="uploadWallBtn" class="btn btn-sm btn-outline-primary">Upload Wallpaper</button>
+        <input id="wallpaperColor" type="color" title="Pick a background color">
+        <button id="setColorBtn" class="btn btn-sm btn-outline-secondary">Set Color</button>
+      </div>
+    </div>`;
+  body.querySelector('#eraseBtn').addEventListener('click', async ()=>{ if(confirm('Erase ALL data?')){ await fetch('/api/gdpr/erase', {method:'POST'}); alert('Data erased'); location.reload(); }});
+  body.querySelector('#exportBtn').addEventListener('click', ()=> window.location='/api/backup/export');
+
+  body.querySelector('#uploadWallBtn').addEventListener('click', async ()=>{
+    const f = body.querySelector('#wallpaperFile').files[0];
+    if(!f) return alert('Choose a file');
+    const form = new FormData(); form.append('wallpaper', f);
+    const res = await fetch('/api/settings/wallpaper', {method:'POST', body: form});
+    if(res.ok){ await loadWallpaper(); alert('Wallpaper uploaded (virtual desktop)'); } else { const js = await res.json().catch(()=>({})); alert('Upload failed: ' + (js.error || 'unknown')); }
+  });
+  body.querySelector('#setColorBtn').addEventListener('click', async ()=>{
+    const color = body.querySelector('#wallpaperColor').value;
+    if(!color) return;
+    const res = await fetch('/api/settings/wallpaper', {method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({color})});
+    if(res.ok){ await loadWallpaper(); alert('Color set'); } else { const js = await res.json().catch(()=>({})); alert('Set color failed: ' + (js.error || 'unknown')); }
+  });
+
+  focusWindow(id);
+}
+
+// ---------- Recycle ----------
+async function openRecycleApp(){
+  const id='recycle'; createWindow(id,'Recycle Bin',640,420); const body = $(`body-${id}`);
+  body.innerHTML = `<div id="recycleGrid"></div>`; await loadTrash(); focusWindow(id);
+  async function loadTrash(){
+    const res = await fetch('/api/files?trashed=1'); const data = await res.json();
+    const grid = body.querySelector('#recycleGrid'); grid.innerHTML = '';
+    data.forEach(f=>{
+      const div = document.createElement('div'); div.className='card p-2 mb-2';
+      div.innerHTML = `<div class="d-flex justify-content-between"><div><strong>${f.filename}</strong><div class="small-muted">${f.mimetype}</div></div><div><button class="btn btn-sm btn-success" data-restore="${f.id}">Restore</button><button class="btn btn-sm btn-danger" data-delete="${f.id}">Delete</button></div></div>`;
+      grid.appendChild(div);
+    });
+    grid.querySelectorAll('[data-restore]').forEach(b=>b.addEventListener('click', async ()=>{ await fetch(`/api/files/${b.dataset.restore}/restore`, {method:'POST'}); loadTrash(); }));
+    grid.querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click', async ()=>{ if(confirm('Delete permanently?')){ await fetch(`/api/files/${b.dataset.delete}/delete`, {method:'DELETE'}); loadTrash(); } }));
+  }
+}
+
+// ---------- Preview ----------
+async function openPreview(id){
+  try{
+    const res = await fetch('/api/files?' + new URLSearchParams({q:'',trashed:'0'}));
+    const arr = await res.json();
+    const f = arr.find(x=>x.id===id);
+    if(!f) return alert('File not found');
+    const title = f.filename; const body = $('previewBody'); body.innerHTML = '';
+    if(f.mimetype && f.mimetype.startsWith('image')) body.innerHTML = `<img src="/api/files/${id}/download" class="img-fluid">`;
+    else if(f.mimetype && f.mimetype.startsWith('video')) body.innerHTML = `<video src="/api/files/${id}/download" controls class="w-100"></video>`;
+    else if(f.mimetype && f.mimetype.startsWith('audio')) body.innerHTML = `<audio src="/api/files/${id}/download" controls class="w-100"></audio>`;
+    else {
+      const r = await fetch(`/api/files/${id}/download`);
+      const txt = await r.text().catch(()=>null);
+      if(txt && txt.length < 200000) body.innerHTML = `<pre style="white-space:pre-wrap">${txt.replace(/</g,'&lt;')}</pre>`;
+      else body.innerHTML = `<a href="/api/files/${id}/download" class="btn btn-primary" target="_blank" rel="noopener">Open / Download</a>`;
+    }
+    $('previewTitle').textContent = title; $('downloadLink').href = `/api/files/${id}/download`; new bootstrap.Modal(document.getElementById('previewModal')).show();
+  }catch(e){ alert('Preview failed: ' + e); }
+}
+
+// ---------- Helpers ----------
+function formatSize(n){ if(!n) return '0 B'; if(n>1e6) return (n/1e6).toFixed(2)+' MB'; if(n>1e3) return (n/1e3).toFixed(2)+' KB'; return n+' B'; }
+function openApp(appId){
+  switch(appId){
+    case 'files': openFilesApp(); break;
+    case 'images': openImagesApp(); break;
+    case 'music': openMusicApp(); break;
+    case 'calculator': openCalculator(); break;
+    case 'notes': openNotesApp(); break;
+    case 'terminal': openTerminal(); break;
+    case 'browser': openBrowser(); break;
+    case 'thispc': openThisPcApp(); break;
+    case 'settings': openSettingsApp(); break;
+    case 'recycle': openRecycleApp(); break;
+
+
+    default: alert('Unknown app: ' + appId);
+  }
+}
+
+// initial root ensure (backend already does this)
+(async ()=>{
+  try{
+    const res = await fetch('/api/folders'); const data = await res.json();
+    if(!data || !data.length) await fetch('/api/folders', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name:'root'})});
+  }catch(e){ console.error('Backend unreachable'); alert('Start the Python server (app.py)'); }
+})();
+
+// wallpaper loader
+async function loadWallpaper(){
+  try {
+    const res = await fetch('/api/settings');
+    const settings = await res.json();
+
+    // Reset first
+    desktopEl.style.background = '';
+
+    // CASE 1 — Image wallpaper
+    if (settings.wallpaper_path) {
+      // Normalise path for Windows (replace \ with /)
+      const cleanPath = settings.wallpaper_path.replace(/\\/g, "/");
+
+      desktopEl.style.backgroundImage = `url('/_wallpaper/${cleanPath}')`;
+      desktopEl.style.backgroundSize = "cover";
+      desktopEl.style.backgroundPosition = "center";
+      desktopEl.style.backgroundRepeat = "no-repeat";
+      return;
+    }
+
+    // CASE 2 — Solid color wallpaper
+    if (settings.wallpaper_color) {
+      desktopEl.style.background = settings.wallpaper_color;
+      return;
+    }
+
+    // DEFAULT (fallback)
+    desktopEl.style.background = "linear-gradient(180deg,#dfefff 0%, #f8fbff 100%)";
+
+  } catch (e) {
+    console.warn("Wallpaper loading failed:", e);
+  }
+}
+
+loadWallpaper();
+
+// drag & drop upload to desktop (uploads to first folder by default)
+desktopEl.addEventListener('dragover', (e)=> { e.preventDefault(); desktopEl.classList.add('dragover'); });
+desktopEl.addEventListener('dragleave', ()=> desktopEl.classList.remove('dragover'));
+desktopEl.addEventListener('drop', async (e)=>{
+  e.preventDefault(); desktopEl.classList.remove('dragover');
+  const files = Array.from(e.dataTransfer.files);
+  let targetFolderId = null;
+  try {
+    const res = await fetch('/api/folders'); const folders = await res.json();
+    if(folders && folders.length) targetFolderId = folders[0].id;
+  } catch(e) {}
+  if(!targetFolderId){ alert('No target folder found'); return; }
+  for(const f of files){
+    const fd = new FormData(); fd.append('file', f); fd.append('folder', targetFolderId);
+    await fetch('/api/files', {method:'POST', body: fd});
+  }
+  // refresh files app if open
+  if(windowsMap['files']) {
+    const refreshBtn = document.querySelector('#body-files #refreshFiles');
+    if(refreshBtn) refreshBtn.click();
+  }
+});
+
+// context menu for files
+function showContextMenu(x,y,fileId){
+  const menu = $('contextMenu'); menu.innerHTML = '';
+  const btnOpen = document.createElement('button'); btnOpen.textContent='Open'; btnOpen.onclick = ()=>{ openPreview(fileId); hideContext(); };
+  const btnRename = document.createElement('button'); btnRename.textContent='Rename'; btnRename.onclick = async ()=>{ hideContext(); const newName = prompt('New name?'); if(!newName) return; const res = await fetch(`/api/files/${fileId}/rename`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name:newName})}); if(res.ok){ if(windowsMap['files']) { document.querySelector('#body-files #refreshFiles').click(); } } else { alert('Rename failed'); } };
+  const btnMove = document.createElement('button'); btnMove.textContent='Move'; btnMove.onclick = async ()=>{ hideContext(); try{ const fr = await fetch('/api/folders'); const folders = await fr.json(); let msg = 'Pick folder id to move:\\n'; folders.forEach(f => msg += `${f.id} -> ${f.name}\\n`); const dest = prompt(msg); if(!dest) return; const res = await fetch(`/api/files/${fileId}/move`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({folder: dest})}); if(res.ok){ if(windowsMap['files']) { document.querySelector('#body-files #refreshFiles').click(); } } else alert('Move failed'); }catch(e){ alert(e); } };
+  const btnTrash = document.createElement('button'); btnTrash.textContent='Trash'; btnTrash.onclick = async ()=>{ hideContext(); if(confirm('Move to trash?')){ await fetch(`/api/files/${fileId}/trash`, {method:'POST'}); if(windowsMap['files']) { document.querySelector('#body-files #refreshFiles').click(); } } };
+  menu.appendChild(btnOpen); menu.appendChild(btnRename); menu.appendChild(btnMove); menu.appendChild(btnTrash);
+  menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.style.display = 'block';
+}
+function hideContext(){ const m = $('contextMenu'); if(m) m.style.display='none'; }
+document.addEventListener('click', hideContext);
+
+// keyboard shortcuts
+document.addEventListener('keydown', (e)=>{
+  if(e.ctrlKey && e.key.toLowerCase() === 'n'){ // new file dialog in files app
+    if(windowsMap['files']) { document.querySelector('#body-files #newFileBtn').click(); e.preventDefault(); }
+  } else if(e.key === 'Delete'){
+    // try to trash selected? not implemented selection UI; skip
+  }
+});
+
+</script>
+</body>
+</html>

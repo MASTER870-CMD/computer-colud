@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: mini-cloud-computer
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    disk:
+      name: cloud-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 5
